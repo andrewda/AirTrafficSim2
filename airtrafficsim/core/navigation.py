@@ -299,7 +299,7 @@ class Nav:
             For Approach: ILS = I07C, Localliser = L25L, RNAV = R25LY/Z
 
         appch : string
-            Approach procedure type (A = initial approach, I = ILS, "" = None)
+            Approach procedure type (A = initial approach, I = ILS, R = RNAV, "" = None)
 
         iaf : string
             Initial approach fix (Please provide when appch = A)
@@ -313,7 +313,7 @@ class Nav:
             Altitude restriction type (+, =, -)
 
         Altitude restriction : float []
-            Altitude restriction 1 
+            Altitude restriction 1
 
         Altitude restriction : float []
             Altitude restriction 2
@@ -342,7 +342,7 @@ class Nav:
             # Initial Approach
             procedure_df = procedures[(procedures[1] == appch) & (
                 procedures[2] == procedure) & (procedures[3] == iaf)]
-        elif appch == "I":
+        else:
             # Final Approach
             procedure_df = procedures[(procedures[1] == appch) & (
                 procedures[2] == procedure)]

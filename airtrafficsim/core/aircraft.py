@@ -82,7 +82,7 @@ class Aircraft:
     def set_speed(self, speed):
         """
         Set the speed of the aircraft.
-        
+
         Parameters
         ----------
         speed : float
@@ -184,6 +184,33 @@ class Aircraft:
             self.traffic.ap.flight_plan_target_speed[index][i] = v_2
             self.traffic.ap.flight_plan_target_speed[index].insert(
                 i, self.traffic.ap.flight_plan_target_speed[index][i])
+
+    def set_flight_plan(self, arrival_airport=None, arrival_runway=None, star=None, approach=None, flight_plan=None, flight_plan_index=None, cruise_alt=None):
+        """
+        Set the flight plan of the aircraft.
+
+        Parameters
+        ----------
+        flight_plan : String[]
+            Flight plan of an aircraft
+        """
+        print(f"Set flight plan: {arrival_airport}, {arrival_runway}, {star}, {approach}, {flight_plan}, {cruise_alt}")
+
+        index = np.where(self.traffic.index == self.index)[0][0]
+        self.traffic.ap.set_flight_plan(
+            index,
+            departure_airport=self.traffic.ap.departure_airport[index],
+            departure_runway=self.traffic.ap.departure_runway[index],
+            sid=self.traffic.ap.sid[index],
+            arrival_airport=self.traffic.ap.arrival_airport[index] if arrival_airport is None else arrival_airport,
+            arrival_runway=self.traffic.ap.arrival_runway[index] if arrival_runway is None else arrival_runway,
+            star=self.traffic.ap.star[index] if star is None else star,
+            approach=self.traffic.ap.approach[index] if approach is None else approach,
+            flight_plan=self.traffic.ap.flight_plan_name[index] if flight_plan is None else flight_plan,
+            flight_plan_index=self.traffic.ap.flight_plan_index[index] if flight_plan_index is None else flight_plan_index,
+            cruise_alt=self.traffic.ap.cruise_alt[index] if cruise_alt is None else cruise_alt
+        )
+
 
     def resume_own_navigation(self):
         """
@@ -299,6 +326,10 @@ class Aircraft:
             ICAO code of the next waypoing
         """
         index = np.where(self.traffic.index == self.index)[0][0]
+
+        if self.traffic.ap.flight_plan_index[index] >= len(self.traffic.ap.flight_plan_name[index]):
+            return None
+
         return self.traffic.ap.flight_plan_name[index][self.traffic.ap.flight_plan_index[index]]
 
     def get_wake(self):

@@ -82,10 +82,10 @@ class Environment:
         # Save to file
         self.save()
 
-        print("Environment - step() for global time", self.global_time,
-              "/", self.end_time, "finished at", time.time() - start_time)
+        # print("Environment - step() for global time", self.global_time,
+        #       "/", self.end_time, "finished at", time.time() - start_time)
 
-        if(socketio != None):
+        if socketio != None:
             # Save to buffer
             data = np.column_stack((self.traffic.index,
                                     self.traffic.call_sign,
@@ -176,15 +176,15 @@ class Environment:
         socketio : socketio object
             socketio object to handle communciation when running simulation
         """
-        print("send to client")
+        print("send to client", datetime.now().isoformat(), self.start_time.isoformat(), self.start_time.isoformat()+"/"+(self.start_time + timedelta(seconds=self.end_time)).isoformat())
 
         document = [{
             "id": "document",
             "name": "simulation",
             "version": "1.0",
             "clock": {
-                    "interval": self.start_time.isoformat()+"/"+(self.start_time + timedelta(seconds=self.end_time)).isoformat(),
-                    "currentTime": self.start_time.isoformat(),
+                "interval": self.start_time.isoformat()+"/"+(self.start_time + timedelta(seconds=self.end_time)).isoformat(),
+                "currentTime": (datetime.now() - timedelta(seconds=3)).isoformat(),
             }
         }]
 
@@ -206,14 +206,14 @@ class Environment:
                         "cartographicDegrees": positions
                     },
                     "point": {
-                        "pixelSize": 5,
+                        "pixelSize": 10,
                         "color": {
                             "rgba": [39, 245, 106, 215]
                         }
                     },
                     "path": {
                         "leadTime": 0,
-                        "trailTime": 20,
+                        "trailTime": 30,
                         "distanceDisplayCondition": {
                             "distanceDisplayCondition": [0, 1500000]
                         }

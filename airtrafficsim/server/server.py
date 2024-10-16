@@ -24,13 +24,13 @@ from airtrafficsim.server.data import Data
 app = Flask(__name__, static_url_path='', static_folder=Path(__file__).parent.parent.joinpath(
     'data/client/build'), template_folder=str(Path(__file__).parent.parent.joinpath('data/client/build')))
 socketio = SocketIO(app, cors_allowed_origins='*', max_http_buffer_size=1e8,
-                    ping_timeout=60, async_mode='eventlet', logger=True)  # engineio_logger=True
+                    ping_timeout=60, async_mode='eventlet')  # engineio_logger=True
 
 
 @socketio.on('connect')
 def test_connect():
     """
-    Debug function to test whether the client is connected. 
+    Debug function to test whether the client is connected.
     """
     print('Client connected')
 
@@ -38,7 +38,7 @@ def test_connect():
 @socketio.on('disconnect')
 def test_disconnect():
     """
-    Debug function to inform the client is disconnected. 
+    Debug function to inform the client is disconnected.
     """
     print('Client disconnected')
 
@@ -146,7 +146,7 @@ def run_simulation(file):
     elif file == "WeatherDemo":
         socketio.emit('loadingMsg', 'Downloading weather data... <br> Please check the terminal for progress.')
     else:
-        socketio.emit('loadingMsg', 'Running simulation... <br> Please check the terminal for progress.')   
+        socketio.emit('loadingMsg', 'Running simulation... <br> Please check the terminal for progress.')
     socketio.sleep(0)
     Env = getattr(import_module('airtrafficsim.data.environment.'+file, '...'), file)
     env = Env()

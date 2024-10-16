@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--headless',
                         type=str,
                         help='Run user defined environment without UI: airtrafficsim --headless <env name>.')
-    
+
     args = parser.parse_args()
 
     if args.init:
