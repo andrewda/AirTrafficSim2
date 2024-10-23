@@ -281,7 +281,7 @@ class Autopilot:
                 self.flight_plan_long[index][-1] = long_tmp
                 self.flight_plan_target_alt[index][-1] = alt_tmp
             else:
-                self.flight_plan_name[index].append(arrival_runway)
+                self.flight_plan_name[index].append(f'{arrival_airport}_RW{arrival_runway}')
                 self.flight_plan_lat[index].append(lat_tmp)
                 self.flight_plan_long[index].append(long_tmp)
                 self.flight_plan_target_alt[index].append(alt_tmp)
@@ -300,7 +300,7 @@ class Autopilot:
                     opp_runway = opp_runway + 'C'
 
                 lat_tmp, long_tmp, alt_tmp = Nav.get_runway_coord(arrival_airport, opp_runway)
-                self.flight_plan_name[index].append(opp_runway)
+                self.flight_plan_name[index].append(f'{arrival_airport}_RW{arrival_runway}_END')
                 self.flight_plan_lat[index].append(lat_tmp)
                 self.flight_plan_long[index].append(long_tmp)
                 self.flight_plan_target_alt[index].append(alt_tmp)
@@ -360,6 +360,15 @@ class Autopilot:
         self.holding = np.delete(self.holding, index)
         self.holding_round = np.delete(self.holding_round, index)
         del self.holding_info[index]
+
+        del self.departure_airport[index]
+        del self.departure_runway[index]
+        del self.sid[index]
+        del self.arrival_airport[index]
+        del self.arrival_runway[index]
+        del self.star[index]
+        del self.approach[index]
+        self.flight_plan_updated = np.delete(self.flight_plan_updated, index)
 
 
     def update(self, traffic: Traffic):

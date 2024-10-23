@@ -8,12 +8,12 @@ from airtrafficsim.utils.unit_conversion import Unit
 
 class Bada:
     """
-    BADA Performance class 
+    BADA Performance class
     """
 
     def __init__(self):
         """
-        Initialize BADA performance parameters 
+        Initialize BADA performance parameters
 
         Parameters
         ----------
@@ -562,7 +562,7 @@ class Bada:
         vertical_mode : float[]
             Vertical mode from Traffic class [Vertical_mode enum]
 
-        configuration : float[] 
+        configuration : float[]
             Configuration from Traffic class [Configuration enum]
 
          H_p : float[]
@@ -615,7 +615,7 @@ class Bada:
             Aircraft mass [kg]
 
         v_ref: float[]
-            Velocity reference (e.g. v_stall) [m/s] 
+            Velocity reference (e.g. v_stall) [m/s]
 
         Returns
         -------
@@ -744,7 +744,7 @@ class Bada:
         Parameters
         ----------
         p: float[]
-            Pressure [Pa] 
+            Pressure [Pa]
 
         M: float[]
             Mach number [dimensionless]
@@ -1032,8 +1032,11 @@ class Bada:
                                       self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_4, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_5, np.minimum(self.__v_cl_1[n], 250), self.__v_cl_2[n], self.__m_cl[n]]
         else:
             # Else if turboprop and piston (Equation 4.1-6~8)
-            self.climb_schedule[n] = [self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_6, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_7, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_8,
-                                      np.minimum(self.__v_cl_1[n], 250), self.__v_cl_2[n], self.__m_cl[n], 0.0, 0.0]
+            # self.climb_schedule[n] = [self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_6, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_7, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_8,
+            #                           np.minimum(self.__v_cl_1[n], 250), self.__v_cl_2[n], self.__m_cl[n], self.__v_cl_2[n], self.__m_cl[n]]
+            self.climb_schedule[n] = [self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_1, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_2, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_3,
+                                      self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_4, self.__C_V_MIN * v_stall_to_act + self.__V_D_CL_5, np.minimum(self.__v_cl_1[n], 250), self.__v_cl_2[n], self.__m_cl[n]]
+
 
         # Standard cruise schedule
         if (self.__engine_type[n] == EngineType.JET):
@@ -1055,8 +1058,11 @@ class Bada:
                                         self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_4, np.minimum(self.__v_des_1[n], 220), np.minimum(self.__v_des_1[n], 250), self.__v_des_2[n], self.__m_des[n]]
         else:
             # Else if Piston (Equation 4.3-5~7)
-            self.descent_schedule[n] = [self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_5, self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_6, self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_7,
-                                        self.__v_des_1[n], self.__v_des_2[n], self.__m_des[n], 0.0, 0.0]
+            # self.descent_schedule[n] = [self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_5, self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_6, self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_7,
+            #                             self.__v_des_1[n], self.__v_des_2[n], self.__m_des[n], 0.0, 0.0]
+            self.descent_schedule[n] = [self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_1, self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_2, self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_3,
+                                        self.__C_V_MIN * v_stall_ld_act + self.__V_D_DSE_4, np.minimum(self.__v_des_1[n], 220), np.minimum(self.__v_des_1[n], 250), self.__v_des_2[n], self.__m_des[n]]
+
 
     def get_procedure_speed(self, H_p, H_p_trans, flight_phase):
         """
@@ -1082,11 +1088,11 @@ class Bada:
             Standard CAS [kt]
         -or-
         M_std: float[]
-            Standard Mach [dimensionless] 
+            Standard Mach [dimensionless]
 
         Notes
         -----
-        TODO: Recommended to determine the speed schedule from the highest altitude to the lowest one, 
+        TODO: Recommended to determine the speed schedule from the highest altitude to the lowest one,
         and to use at each step the speed of the higher altitude range as a ceiling value for the lower altitude range.
 
         TODO: Bound the speed schedule form the minimum and maximum speed.

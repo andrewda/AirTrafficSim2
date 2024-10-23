@@ -13,7 +13,7 @@ socketio : SocketIO()
 from pathlib import Path
 from importlib import import_module
 from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 # import eventlet
 
 from airtrafficsim.server.replay import Replay
@@ -253,14 +253,20 @@ def get_radar_img(lat1, long1, lat2, long2, file, time):
     return Data.get_radar_img(file, lat1, long1, lat2, long2, time)
 
 
+@socketio.on('webrtc')
+def webrtc(data):
+    """Send webrtc data to client"""
+    emit('webrtc', data, broadcast=True, include_self=False)
+
+
 @app.route("/")
 def serve_client():
     """Serve client folder to user"""
     return render_template("index.html")
 
 
-def run_server(port=6111, host="127.0.0.1"):
+def run_server(port=6111, host="0.0.0.0"):
     # Change host to 0.0.0.0 during deployment
     """Start the backend server."""
     print("Running server at http://localhost:"+str(port))
-    socketio.run(app, port=port, host=host)
+    socketio.run(app, port=port, host=host, certfile=Path(__file__).parent.parent.parent.parent.resolve().joinpath('certificates/localhost.pem'), keyfile=Path(__file__).parent.parent.parent.parent.resolve().joinpath('certificates/localhost-key.pem'))

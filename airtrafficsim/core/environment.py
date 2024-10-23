@@ -143,19 +143,20 @@ class Environment:
         """
         Save all states variable of one timestemp to csv file.
         """
-        data = np.column_stack((np.full(len(self.traffic.index), self.global_time), np.full(len(self.traffic.index), (self.start_time + timedelta(seconds=self.global_time)).isoformat(timespec='seconds')), self.traffic.index, self.traffic.call_sign, self.traffic.lat, self.traffic.long, self.traffic.alt,
-                                self.traffic.cas, self.traffic.tas, self.traffic.mach, self.traffic.vs,
-                                self.traffic.heading, self.traffic.bank_angle, self.traffic.path_angle,
-                                self.traffic.mass, self.traffic.fuel_consumed,
-                                self.traffic.perf.thrust, self.traffic.perf.drag, self.traffic.perf.esf, self.traffic.accel,
-                                self.traffic.ap.track_angle, self.traffic.ap.heading, self.traffic.ap.alt, self.traffic.ap.cas, self.traffic.ap.mach, self.traffic.ap.procedure_speed,
-                                self.traffic.ap.flight_plan_index, [self.traffic.ap.flight_plan_name[i][val] if (val < len(self.traffic.ap.flight_plan_name[i])) else "NONE" for i, val in enumerate(
-                                    self.traffic.ap.flight_plan_index)], self.traffic.ap.dist, self.traffic.ap.holding_round,  # autopilot variable
-                                [FlightPhase(i).name for i in self.traffic.flight_phase], [Config(i).name for i in self.traffic.configuration], [
-            SpeedMode(i).name for i in self.traffic.speed_mode], [VerticalMode(i).name for i in self.traffic.vertical_mode],
-            [APSpeedMode(i).name for i in self.traffic.ap.speed_mode], [APLateralMode(i).name for i in self.traffic.ap.lateral_mode], [APThrottleMode(i).name for i in self.traffic.ap.auto_throttle_mode]))  # mode
+        pass
+        # data = np.column_stack((np.full(len(self.traffic.index), self.global_time), np.full(len(self.traffic.index), (self.start_time + timedelta(seconds=self.global_time)).isoformat(timespec='seconds')), self.traffic.index, self.traffic.call_sign, self.traffic.lat, self.traffic.long, self.traffic.alt,
+        #                         self.traffic.cas, self.traffic.tas, self.traffic.mach, self.traffic.vs,
+        #                         self.traffic.heading, self.traffic.bank_angle, self.traffic.path_angle,
+        #                         self.traffic.mass, self.traffic.fuel_consumed,
+        #                         self.traffic.perf.thrust, self.traffic.perf.drag, self.traffic.perf.esf, self.traffic.accel,
+        #                         self.traffic.ap.track_angle, self.traffic.ap.heading, self.traffic.ap.alt, self.traffic.ap.cas, self.traffic.ap.mach, self.traffic.ap.procedure_speed,
+        #                         self.traffic.ap.flight_plan_index, [self.traffic.ap.flight_plan_name[i][val] if (val < len(self.traffic.ap.flight_plan_name[i])) else "NONE" for i, val in enumerate(
+        #                             self.traffic.ap.flight_plan_index)], self.traffic.ap.dist, self.traffic.ap.holding_round,  # autopilot variable
+        #                         [FlightPhase(i).name for i in self.traffic.flight_phase], [Config(i).name for i in self.traffic.configuration], [
+        #     SpeedMode(i).name for i in self.traffic.speed_mode], [VerticalMode(i).name for i in self.traffic.vertical_mode],
+        #     [APSpeedMode(i).name for i in self.traffic.ap.speed_mode], [APLateralMode(i).name for i in self.traffic.ap.lateral_mode], [APThrottleMode(i).name for i in self.traffic.ap.auto_throttle_mode]))  # mode
 
-        self.writer.writerows(data)
+        # self.writer.writerows(data)
 
     def export_to_csv(self):
         """
@@ -249,6 +250,38 @@ class Environment:
                     "mode": 'lines',
                 })
 
+        # Additional aircraft telemetry
+        # TODO: emit at a slower rate? probably not necessary for now
+        aircraft_data = [
+            {
+                'callsign': self.traffic.call_sign[i].item(),
+                'aircraftType': self.traffic.aircraft_type[i].item(),
+                'flightPhase': self.traffic.flight_phase[i].item(),
+                'configuration': self.traffic.configuration[i].item(),
+                'verticalMode': self.traffic.vertical_mode[i].item(),
+                'position': [self.traffic.lat[i].item(), self.traffic.long[i].item()],
+                'altitude': self.traffic.alt[i].item(),
+                'heading': self.traffic.heading[i].item(),
+                'track': self.traffic.track_angle[i].item(),
+                'cas': self.traffic.cas[i].item(),
+                'tas': self.traffic.tas[i].item(),
+                'vs': self.traffic.vs[i].item(),
+                'flightPlan': self.traffic.ap.flight_plan_name[i],
+                'flightPlanPos': list(zip(self.traffic.ap.flight_plan_lat[i], self.traffic.ap.flight_plan_long[i])),
+                'flightPlanTargetSpeed': self.traffic.ap.flight_plan_target_speed[i],
+                'flightPlanIndex': self.traffic.ap.flight_plan_index[i].item(),
+                'departureAirport': self.traffic.ap.departure_airport[i],
+                'departureRunway': self.traffic.ap.departure_runway[i],
+                'sid': self.traffic.ap.sid[i],
+                'arrivalAirport': self.traffic.ap.arrival_airport[i],
+                'arrivalRunway': self.traffic.ap.arrival_runway[i],
+                'star': self.traffic.ap.star[i],
+                'approach': self.traffic.ap.approach[i],
+            }
+            for i in range(len(self.traffic.index))
+        ]
+
         socketio.emit('simulationData', {'czml': document, 'progress': self.global_time /
-                      self.end_time, 'packet_id': self.packet_id, 'graph': graph_data})
+                      self.end_time, 'packet_id': self.packet_id, 'graph': graph_data,
+                      'aircraft': aircraft_data})
         self.packet_id = self.packet_id + 1

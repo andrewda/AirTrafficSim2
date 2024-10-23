@@ -41,9 +41,9 @@ class RealTimeEnvironment(Environment):
                 # - flight_plan
                 # - approach
 
-                self.handle_command(command['aircraft'], command['command'], command['payload'])
-
                 print('received command', command)
+
+                return self.handle_command(command['aircraft'], command['command'], command['payload'] if 'payload' in command else None)
 
         self.socketio = socketio
 

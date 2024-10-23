@@ -148,7 +148,7 @@ class Performance:
             Standard CAS [kt]
         -or-
         M_std: float[]
-            Standard Mach [dimensionless] 
+            Standard Mach [dimensionless]
         """
         if (self.performance_mode == "BADA"):
             return self.perf_model.get_procedure_speed(H_p, H_p_trans, flight_phase)
@@ -261,7 +261,7 @@ class Performance:
             Calibrated air speed [m/s]
 
         p: float[]
-            Pressure [Pa] 
+            Pressure [Pa]
 
         rho: float[]
             Density [kg/m^3]
@@ -284,7 +284,7 @@ class Performance:
             True air speed [m/s]
 
         p: float[]
-            Pressure [Pa] 
+            Pressure [Pa]
 
         rho: float[]
             Density [kg/m^3]
@@ -620,7 +620,7 @@ class Performance:
             Aircraft mass [kg]
 
         D: float[]
-            Aerodynamic drag [N]    
+            Aerodynamic drag [N]
 
         rocd: float[]
             Rate of climb or descent [m/s]
@@ -829,7 +829,7 @@ class Performance:
 
         Returns
         -------
-        bank_angles :float 
+        bank_angles :float
             Bank angles [deg]
         """
         if (self.performance_mode == "BADA"):

@@ -56,6 +56,7 @@ class StudyFullFlight(RealTimeEnvironment):
             index = np.where(self.traffic.call_sign == callsign)[0][0]
 
             print(callsign, self.aircraft[callsign].get_alt(), self.aircraft[callsign].get_next_wp(), self.traffic.ap.flight_plan_index[index])
+            # if (callsign == 'HMT 110' and self.global_time == 60) or (callsign == 'HMT 120' and self.global_time == 90):
             if self.aircraft[callsign].get_next_wp() is None:
             # if self.aircraft[callsign].get_alt() == 0:
                 index = np.where(self.traffic.call_sign == callsign)[0][0]
@@ -80,35 +81,40 @@ class StudyFullFlight(RealTimeEnvironment):
         #                               cruise_alt=18000)
 
     def handle_command(self, aircraft, command, payload):
+        print(f'received command {command} for aircraft {aircraft} with payload {payload}')
+
         if command == "takeoff":
-            print('received takeoff command', aircraft)
+            if aircraft in self.aircraft:
+                print(f'{aircraft} already in aircraft list')
+                return
+
             print(aircraft_config[aircraft], aircraft_config[aircraft]['departure_airport'], aircraft_config[aircraft]['departure_runway'][2:])
             lat_dep, long_dep, alt_dep = Nav.get_runway_coord(aircraft_config[aircraft]['departure_airport'], aircraft_config[aircraft]['departure_runway'][2:])
 
-            self.aircraft[aircraft] = Aircraft(self.traffic, call_sign=aircraft, aircraft_type="A320", flight_phase=FlightPhase.TAKEOFF, configuration=Config.TAKEOFF,
+
+            # TODO: move all this to client config, maybe with default values here
+            self.aircraft[aircraft] = Aircraft(self.traffic, call_sign=aircraft, aircraft_type="C208", flight_phase=FlightPhase.TAKEOFF, configuration=Config.TAKEOFF,
                                                 lat=lat_dep, long=long_dep, alt=alt_dep, heading=aircraft_config[aircraft]['heading'], cas=aircraft_config[aircraft]['cas'],
-                                                fuel_weight=5273.0, payload_weight=12000.0,
+                                                # fuel_weight=5273.0, payload_weight=12000.0,
+                                                fuel_weight=900, payload_weight=0.0,
                                                 departure_airport=aircraft_config[aircraft]['departure_airport'], departure_runway=aircraft_config[aircraft]['departure_runway'], sid=aircraft_config[aircraft]['sid'],
                                                 arrival_airport=aircraft_config[aircraft]['arrival_airport'], arrival_runway=aircraft_config[aircraft]['arrival_runway'], star=aircraft_config[aircraft]['star'], approach=aircraft_config[aircraft]['approach'],
                                                 flight_plan=aircraft_config[aircraft]['flight_plan'],
                                                 cruise_alt=18000)
 
         elif command == "heading":
-            print('received something command', payload)
             self.aircraft[aircraft].set_heading(payload)
 
         elif command == "altitude":
-            print('received something command', payload)
             self.aircraft[aircraft].set_alt(payload)
 
-        elif command == "airspeed":
-            print('received something command', payload)
-            self.aircraft[aircraft].set_cas(payload)
+        # elif command == "airspeed":
+        #     self.aircraft[aircraft].set_cas(payload)
 
         elif command == "resume_nav":
-            print('received resume_own_nav command')
             self.aircraft[aircraft].resume_own_navigation()
 
         elif command == "flight_plan":
-            print('received flight_plan command', payload)
             self.aircraft[aircraft].set_flight_plan(**payload)
+
+        return True
