@@ -62,6 +62,7 @@ class StudyFullFlight(RealTimeEnvironment):
                 index = np.where(self.traffic.call_sign == callsign)[0][0]
                 self.traffic.del_aircraft(self.traffic.index[index])
                 self.last_sent_time = 0
+                del self.aircraft[callsign]
 
         return False
 
@@ -107,6 +108,7 @@ class StudyFullFlight(RealTimeEnvironment):
 
         elif command == "altitude":
             self.aircraft[aircraft].set_alt(payload)
+            self.aircraft[aircraft].set_vs(500 if payload >= self.aircraft[aircraft].get_alt() else -500)
 
         # elif command == "airspeed":
         #     self.aircraft[aircraft].set_cas(payload)

@@ -55,6 +55,8 @@ class Autopilot:
         # Flight plan
         self.flight_plan_index = np.zeros([0], dtype=int)
         """Index of next waypoint in flight plan array [int]"""
+        self.flight_plan_enroute = []
+        """Flight plan for enroute navigation [[string]]"""
         self.flight_plan_name = []
         """2D array to store the string of waypoints [[string]]"""
         self.flight_plan_lat = []
@@ -142,6 +144,7 @@ class Autopilot:
         self.hv_next_wp = np.append(self.hv_next_wp, False)
         self.dist = np.append(self.dist, 0.0)
         self.flight_plan_index = np.append(self.flight_plan_index, 0)
+        self.flight_plan_enroute.append([])
         self.flight_plan_name.append([])
         self.flight_plan_lat.append([])
         self.flight_plan_long.append([])
@@ -182,6 +185,7 @@ class Autopilot:
         self.approach[index] = approach
         self.cruise_alt[index] = cruise_alt
 
+        self.flight_plan_enroute[index] = flight_plan
         self.flight_plan_name[index] = []
         self.flight_plan_lat[index] = []
         self.flight_plan_long[index] = []
@@ -346,6 +350,7 @@ class Autopilot:
         self.hv_next_wp = np.delete(self.hv_next_wp, index)
         self.dist = np.delete(self.dist, index)
         self.flight_plan_index = np.delete(self.flight_plan_index, index)
+        del self.flight_plan_enroute[index]
         del self.flight_plan_name[index]
         del self.flight_plan_lat[index]
         del self.flight_plan_long[index]
@@ -384,13 +389,13 @@ class Autopilot:
         for i, val in enumerate(self.flight_plan_index):    #TODO: optimization
             if val < len(self.flight_plan_name[i]):
                 # Target Flight Plan Lat/Long
-                print(f"Target waypoint: {self.flight_plan_name[i][val]} @ {self.flight_plan_lat[i][val]}, {self.flight_plan_long[i][val]}")
+                # print(f"Target waypoint: {self.flight_plan_name[i][val]} @ {self.flight_plan_lat[i][val]}, {self.flight_plan_long[i][val]}")
                 self.lat[i] = self.flight_plan_lat[i][val]
                 self.long[i] = self.flight_plan_long[i][val]
                 if val == len(self.flight_plan_name[i]) - 1:
                     self.hv_next_wp[i] = False
                 else:
-                    print(f"Next waypoint: {self.flight_plan_name[i][val+1]} @ {self.flight_plan_lat[i][val+1]}, {self.flight_plan_long[i][val+1]}")
+                    # print(f"Next waypoint: {self.flight_plan_name[i][val+1]} @ {self.flight_plan_lat[i][val+1]}, {self.flight_plan_long[i][val+1]}")
                     self.lat_next[i] = self.flight_plan_lat[i][val+1]
                     self.long_next[i] = self.flight_plan_long[i][val+1]
                     self.hv_next_wp[i] = True
@@ -458,7 +463,7 @@ class Autopilot:
         self.heading = np.where(self.lateral_mode == APLateralMode.HEADING, self.heading, self.track_angle + np.arcsin(traffic.weather.wind_speed / traffic.tas * np.sin(self.track_angle - traffic.weather.wind_direction))) #https://www.omnicalculator.com/physics/wind-correction-angle
 
         update_next_wp = (self.lateral_mode == APLateralMode.LNAV) & (dist > self.dist) & (np.abs(Cal.cal_angle_diff(traffic.heading, next_track_angle)) < 1.0)
-        print(f"Update next waypoint: {update_next_wp}")
+        # print(f"Update next waypoint: {update_next_wp}")
         self.flight_plan_index = np.where(update_next_wp, self.flight_plan_index+1, self.flight_plan_index)
         self.dist = np.where(update_next_wp, Cal.cal_great_circle_dist(traffic.lat, traffic.long, self.lat_next, self.long_next), dist)
 

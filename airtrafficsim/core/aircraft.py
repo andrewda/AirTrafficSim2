@@ -118,6 +118,8 @@ class Aircraft:
             Altitude [ft]
         """
         index = np.where(self.traffic.index == self.index)[0][0]
+        flight_plan_index = self.traffic.ap.flight_plan_index[index]
+        self.traffic.ap.flight_plan_target_alt[index][flight_plan_index] = alt
         self.traffic.ap.alt[index] = alt
 
     def set_direct(self, waypoint):
@@ -206,7 +208,7 @@ class Aircraft:
             arrival_runway=self.traffic.ap.arrival_runway[index] if arrival_runway is None else arrival_runway,
             star=self.traffic.ap.star[index] if star is None else star,
             approach=self.traffic.ap.approach[index] if approach is None else approach,
-            flight_plan=self.traffic.ap.flight_plan_name[index] if flight_plan is None else flight_plan,
+            flight_plan=self.traffic.ap.flight_plan_enroute[index] if flight_plan is None else flight_plan,
             flight_plan_index=self.traffic.ap.flight_plan_index[index] if flight_plan_index is None else flight_plan_index,
             cruise_alt=self.traffic.ap.cruise_alt[index] if cruise_alt is None else cruise_alt
         )
