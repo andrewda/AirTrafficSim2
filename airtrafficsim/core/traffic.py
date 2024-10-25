@@ -445,12 +445,12 @@ class Traffic:
             self.vertical_mode == VerticalMode.DESCENT
         ],
             choicelist=[
-            np.where(self.alt > self.ap.alt,
-                     self.ap.alt, self.alt),
-            np.where(self.alt < self.ap.alt,
-                     self.ap.alt, self.alt)
+            np.where(new_alt > self.ap.alt,
+                     self.ap.alt, new_alt),
+            np.where(new_alt < self.ap.alt,
+                     self.ap.alt, new_alt)
         ],
-            default=self.alt)
+            default=new_alt)
         self.alt = np.where((self.flight_phase != FlightPhase.TAXI_ORIGIN) & (self.flight_phase != FlightPhase.TAXI_DEST), new_alt, self.alt)
 
         # Fuel
