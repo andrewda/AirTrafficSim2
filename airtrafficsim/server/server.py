@@ -26,6 +26,7 @@ app = Flask(__name__, static_url_path='', static_folder=Path(__file__).parent.pa
 socketio = SocketIO(app, cors_allowed_origins='*', max_http_buffer_size=1e8,
                     ping_timeout=60, async_mode='eventlet')  # engineio_logger=True
 
+running_environment = None
 
 @socketio.on('connect')
 def test_connect():
@@ -140,6 +141,7 @@ def run_simulation(file):
     file : string
         Environment file name
     """
+    global running_environment
     print(file)
     if file == "ConvertHistoricDemo":
         socketio.emit('loadingMsg', 'Converting historic data to simulation data... <br> Please check the terminal for progress.')
@@ -148,8 +150,13 @@ def run_simulation(file):
     else:
         socketio.emit('loadingMsg', 'Running simulation... <br> Please check the terminal for progress.')
     socketio.sleep(0)
-    Env = getattr(import_module('airtrafficsim.data.environment.'+file, '...'), file)
+    Env = getattr(import_module('airtrafficsim.data.environment.' + file, '...'), file)
     env = Env()
+
+    if running_environment is not None:
+        running_environment.stop()
+    running_environment = env
+
     env.run(socketio)
 
 

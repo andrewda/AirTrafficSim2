@@ -78,8 +78,9 @@ class Config(IntEnum):
     INITIAL_CLIMB = 2
     CLEAN = 3
     APPROACH = 4
-    LANDING = 
+    LANDING =
     """
+    GROUND = 0,
     TAKEOFF = 1,
     INITIAL_CLIMB = 2,
     CLEAN = 3,
@@ -110,6 +111,7 @@ class VerticalMode(IntEnum):
     CLIMB = 2
     DESCENT = 3
     """
+    GROUND = 0,
     LEVEL = 1,
     CLIMB = 2,
     DESCENT = 3
@@ -126,6 +128,7 @@ class APSpeedMode(IntEnum):
     ACCELERATE = 3
     DECELERATE = 4
     """
+    NONE = 0,
     CONSTANT_MACH = 1,
     CONSTANT_CAS = 2,
     ACCELERATE = 3,
@@ -141,6 +144,7 @@ class APThrottleMode(IntEnum):
     AUTO = 1,
     SPEED = 2
     """
+    NONE = 0,
     AUTO = 1,
     SPEED = 2
 
@@ -155,6 +159,7 @@ class APVerticalMode(IntEnum):
     VS = 2
     FLC = 3
     """
+    NONE = 0,
     ALT_HOLD = 1,
     VS = 2,
     FLC = 3
@@ -169,5 +174,6 @@ class APLateralMode(IntEnum):
     HEADING = 1
     LNAV = 2
     """
+    NONE = 0,
     HEADING = 1,
     LNAV = 2

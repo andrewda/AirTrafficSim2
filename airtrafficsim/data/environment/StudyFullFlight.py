@@ -10,21 +10,11 @@ from airtrafficsim.core.navigation import Nav
 from airtrafficsim.utils.enums import Config, FlightPhase
 
 
-aircraft_config = {
-    'HMT 110': {
-        "heading": 283.0, "cas": 149.0,
-        "departure_airport": "KPDX", "departure_runway": "RW28L", "sid": "",
-        "arrival_airport": "KSLE", "arrival_runway": "13", "star": "", "approach": "R13",
-        "flight_plan": ["YIBPU", "UBG"],
-    },
-    'HMT 120': {
-        "heading": 283.0, "cas": 149.0,
-        "departure_airport": "KPDX", "departure_runway": "RW28L", "sid": "",
-        "arrival_airport": "KCVO", "arrival_runway": "17", "star": "", "approach": "R17",
-        "flight_plan": ["YIBPU", "ADLOW"],
-    }
-}
-
+def extract_number(string):
+    digits = [char for char in string if char.isdigit()]
+    if digits:
+        return int(''.join(digits))
+    return None
 
 class StudyFullFlight(RealTimeEnvironment):
 
@@ -54,17 +44,13 @@ class StudyFullFlight(RealTimeEnvironment):
         # Check for aircraft landing and remove
         for callsign in self.traffic.call_sign:
             index = np.where(self.traffic.call_sign == callsign)[0][0]
-
-            print(callsign, self.aircraft[callsign].get_alt(), self.aircraft[callsign].get_next_wp(), self.traffic.ap.flight_plan_index[index])
-            # if (callsign == 'HMT 110' and self.global_time == 60) or (callsign == 'HMT 120' and self.global_time == 90):
             if self.aircraft[callsign].get_next_wp() is None:
-            # if self.aircraft[callsign].get_alt() == 0:
                 index = np.where(self.traffic.call_sign == callsign)[0][0]
                 self.traffic.del_aircraft(self.traffic.index[index])
                 self.last_sent_time = 0
                 del self.aircraft[callsign]
 
-        return False
+        return super().should_end()
 
     def atc_command(self):
         # User algorithm
@@ -84,24 +70,34 @@ class StudyFullFlight(RealTimeEnvironment):
     def handle_command(self, aircraft, command, payload):
         print(f'received command {command} for aircraft {aircraft} with payload {payload}')
 
-        if command == "takeoff":
-            if aircraft in self.aircraft:
-                print(f'{aircraft} already in aircraft list')
-                return
+        if command == "init":
+            for aircraft_config in payload:
+                callsign = aircraft_config['callsign']
+                print(aircraft_config['departure_airport'], aircraft_config['departure_runway'][2:])
+                lat_dep, long_dep, alt_dep = Nav.get_runway_coord(aircraft_config['departure_airport'], aircraft_config['departure_runway'][2:])
 
-            print(aircraft_config[aircraft], aircraft_config[aircraft]['departure_airport'], aircraft_config[aircraft]['departure_runway'][2:])
-            lat_dep, long_dep, alt_dep = Nav.get_runway_coord(aircraft_config[aircraft]['departure_airport'], aircraft_config[aircraft]['departure_runway'][2:])
+                default_config = {
+                    # "call_sign": callsign,
+                    "aircraft_type": "C208",
+                    "flight_phase": FlightPhase.TAXI_ORIGIN,
+                    "configuration": Config.TAKEOFF,
+                    "lat": lat_dep,
+                    "long": long_dep,
+                    "alt": alt_dep,
+                    "heading": extract_number(aircraft_config['departure_runway']) * 100,
+                    "cas": 80.0,
+                    "fuel_weight": 900,
+                    "payload_weight": 0.0,
+                    "cruise_alt": 18000,
+                    "sid": "",
+                    "star": "",
+                }
+
+                self.aircraft[callsign] = Aircraft(self.traffic, **default_config, **aircraft_config)
 
 
-            # TODO: move all this to client config, maybe with default values here
-            self.aircraft[aircraft] = Aircraft(self.traffic, call_sign=aircraft, aircraft_type="C208", flight_phase=FlightPhase.TAKEOFF, configuration=Config.TAKEOFF,
-                                                lat=lat_dep, long=long_dep, alt=alt_dep, heading=aircraft_config[aircraft]['heading'], cas=aircraft_config[aircraft]['cas'],
-                                                # fuel_weight=5273.0, payload_weight=12000.0,
-                                                fuel_weight=900, payload_weight=0.0,
-                                                departure_airport=aircraft_config[aircraft]['departure_airport'], departure_runway=aircraft_config[aircraft]['departure_runway'], sid=aircraft_config[aircraft]['sid'],
-                                                arrival_airport=aircraft_config[aircraft]['arrival_airport'], arrival_runway=aircraft_config[aircraft]['arrival_runway'], star=aircraft_config[aircraft]['star'], approach=aircraft_config[aircraft]['approach'],
-                                                flight_plan=aircraft_config[aircraft]['flight_plan'],
-                                                cruise_alt=18000)
+        elif command == "takeoff":
+            self.aircraft[aircraft].set_flight_phase(FlightPhase.TAKEOFF)
 
         elif command == "heading":
             self.aircraft[aircraft].set_heading(payload)
@@ -109,9 +105,6 @@ class StudyFullFlight(RealTimeEnvironment):
         elif command == "altitude":
             self.aircraft[aircraft].set_alt(payload)
             self.aircraft[aircraft].set_vs(500 if payload >= self.aircraft[aircraft].get_alt() else -500)
-
-        # elif command == "airspeed":
-        #     self.aircraft[aircraft].set_cas(payload)
 
         elif command == "resume_nav":
             self.aircraft[aircraft].resume_own_navigation()

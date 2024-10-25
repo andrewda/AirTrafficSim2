@@ -271,6 +271,9 @@ class Traffic:
         self.speed_mode = np.where(
             self.alt < self.trans_alt, SpeedMode.CAS, SpeedMode.MACH)
 
+        # if self.flight_phase == FlightPhase.TAXI_ORIGIN or self.flight_phase == FlightPhase.TAXI_DEST:
+        #     return
+
         # Update autopilot
         self.ap.update(self)
 
@@ -286,6 +289,8 @@ class Traffic:
             self.cas, self.alt, self.vertical_mode)
         # !TODO Is flight phase needed anymore?
         self.flight_phase = np.select(condlist=[
+            (self.flight_phase == FlightPhase.TAXI_ORIGIN),
+            (self.flight_phase == FlightPhase.TAXI_DEST),
             (self.configuration == Config.TAKEOFF) & (self.alt > 0.0),
             self.configuration == Config.INITIAL_CLIMB,
             (self.vertical_mode == VerticalMode.CLIMB) & (
@@ -298,6 +303,8 @@ class Traffic:
             (self.flight_phase == FlightPhase.LANDING) & (self.alt == 0.0)
         ],
             choicelist=[
+            FlightPhase.TAXI_ORIGIN,
+            FlightPhase.TAXI_DEST,
             FlightPhase.TAKEOFF,
             FlightPhase.INITIAL_CLIMB,
             FlightPhase.CLIMB,
@@ -428,11 +435,12 @@ class Traffic:
         self.path_angle = np.rad2deg(
             np.arctan((self.vs/60.0)/(self.tas * 1.68781)))
 
-        # Position
-        self.lat = self.lat + self.gs_north / 216000.0
-        self.long = self.long + self.gs_east / 216000.0
-        self.alt = self.alt + self.vs / 60.0
-        self.alt = np.select(condlist=[  # handle overshoot
+        # Only update position if aircraft is not in taxi
+        self.lat = np.where((self.flight_phase != FlightPhase.TAXI_ORIGIN) & (self.flight_phase != FlightPhase.TAXI_DEST), self.lat + self.gs_north / 216000.0, self.lat)
+        self.long = np.where((self.flight_phase != FlightPhase.TAXI_ORIGIN) & (self.flight_phase != FlightPhase.TAXI_DEST), self.long + self.gs_east / 216000.0, self.long)
+
+        new_alt = self.alt + self.vs / 60.0
+        new_alt = np.select(condlist=[  # handle overshoot
             self.vertical_mode == VerticalMode.CLIMB,
             self.vertical_mode == VerticalMode.DESCENT
         ],
@@ -443,6 +451,7 @@ class Traffic:
                      self.ap.alt, self.alt)
         ],
             default=self.alt)
+        self.alt = np.where((self.flight_phase != FlightPhase.TAXI_ORIGIN) & (self.flight_phase != FlightPhase.TAXI_DEST), new_alt, self.alt)
 
         # Fuel
         fuel_burn = self.perf.cal_fuel_burn(

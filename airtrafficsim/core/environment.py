@@ -35,6 +35,8 @@ class Environment:
         self.packet_id = 0
         self.buffer_data = []
 
+        self.stopped = False
+
         # File IO
         self.file_name = file_name+'-' + \
             self.datetime.isoformat(timespec='seconds')
@@ -67,7 +69,7 @@ class Environment:
         """
         Virtual method to determine whether the simulation should end each timestep.
         """
-        return False
+        return self.stopped
 
     def step(self, socketio=None):
         """
@@ -139,6 +141,9 @@ class Environment:
         print("")
         print("Simulation finished")
 
+    def stop(self):
+        self.stopped = True
+
     def save(self):
         """
         Save all states variable of one timestemp to csv file.
@@ -177,8 +182,6 @@ class Environment:
         socketio : socketio object
             socketio object to handle communciation when running simulation
         """
-        print("send to client", datetime.now().isoformat(), self.start_time.isoformat(), self.start_time.isoformat()+"/"+(self.start_time + timedelta(seconds=self.end_time)).isoformat())
-
         document = [{
             "id": "document",
             "name": "simulation",
@@ -264,9 +267,8 @@ class Environment:
                 'altitude': self.traffic.alt[i].item(),
                 'heading': self.traffic.heading[i].item(),
                 'track': self.traffic.track_angle[i].item(),
-                'cas': self.traffic.cas[i].item(),
-                'tas': self.traffic.tas[i].item(),
-                'vs': self.traffic.vs[i].item(),
+                'tas': 0 if self.traffic.flight_phase[i].item() == FlightPhase.TAXI_ORIGIN or self.traffic.flight_phase[i].item() == FlightPhase.TAXI_DEST else self.traffic.tas[i].item(),
+                'vs': 0 if self.traffic.flight_phase[i].item() == FlightPhase.TAXI_ORIGIN or self.traffic.flight_phase[i].item() == FlightPhase.TAXI_DEST else self.traffic.vs[i].item(),
                 'flightPlan': self.traffic.ap.flight_plan_name[i],
                 'flightPlanEnroute': self.traffic.ap.flight_plan_enroute[i],
                 'flightPlanPos': list(zip(self.traffic.ap.flight_plan_lat[i], self.traffic.ap.flight_plan_long[i])),

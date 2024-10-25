@@ -12,7 +12,7 @@ class Aircraft:
     Aircraft class to represent the states of one individual aircraft, including get and set functions.
     """
 
-    def __init__(self, traffic: Traffic, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport="", departure_runway="", sid="", arrival_airport="", arrival_runway="", star="", approach="", flight_plan=[], cruise_alt=-1):
+    def __init__(self, traffic: Traffic, callsign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport="", departure_runway="", sid="", arrival_airport="", arrival_runway="", star="", approach="", flight_plan=[], cruise_alt=-1):
         """
         Initialize one aircraft and add the aircraft to traffic array.
 
@@ -20,7 +20,7 @@ class Aircraft:
         ----------
         traffic : Traffic
             Points to the traffic array class. (The value must be self.traffic)
-        call_sign : str
+        callsign : str
             Call sign of the aircraft
         aircraft_type : str
             ICAO aircraft type
@@ -62,7 +62,7 @@ class Aircraft:
             Target cruise altitude [ft], by default -1
         """
         self.traffic = traffic          # Pass traffic array reference
-        self.index = self.traffic.add_aircraft(call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight,
+        self.index = self.traffic.add_aircraft(callsign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight,
                                                departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, cruise_alt)        # Add aircraft. Obtain aircraft index
         self.vectoring = ""
 
@@ -213,6 +213,12 @@ class Aircraft:
             cruise_alt=self.traffic.ap.cruise_alt[index] if cruise_alt is None else cruise_alt
         )
 
+    def set_flight_phase(self, flight_phase):
+        """
+        Set flight phase.
+        """
+        index = np.where(self.traffic.index == self.index)[0][0]
+        self.traffic.flight_phase[index] = flight_phase
 
     def resume_own_navigation(self):
         """
