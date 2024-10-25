@@ -176,6 +176,8 @@ class Autopilot:
     def set_flight_plan(self, index, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt):
         print("Set flight plan original:", self.flight_plan_name[index])
 
+        lat_dep, long_dep, alt_dep = Nav.get_runway_coord(departure_airport, departure_runway[2:])
+
         self.departure_airport[index] = departure_airport
         self.departure_runway[index] = departure_runway
         self.sid[index] = sid
@@ -222,7 +224,7 @@ class Autopilot:
 
         # Add STAR to flight plan
         if not star == "":
-            waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway, star)
+            waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway[2:], star)
             if len(waypoint) > 0:
                 self.flight_plan_name[index].extend(waypoint)
                 self.flight_plan_target_alt[index].extend(alt_restriction)
@@ -234,7 +236,7 @@ class Autopilot:
 
         if not approach == "":
             # Add Initial Approach to flight plan
-            waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway, approach, appch="A", iaf=self.flight_plan_name[index][-1])
+            waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway[2:], approach, appch="A", iaf=self.flight_plan_name[index][-1])
             if len(waypoint) > 0:
                 # Remove last element of flight plan which should be equal to iaf
                 self.flight_plan_name[index].pop()
@@ -246,7 +248,7 @@ class Autopilot:
                 self.flight_plan_target_speed[index].extend(speed_restriction)
 
             # Add Final Approach to flight plan
-            waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway, approach, appch=approach[0])
+            waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway[2:], approach, appch=approach[0])
             if len(waypoint) > 0:
                 # Remove last element of flight plan which should be equal to iaf
                 self.flight_plan_name[index].pop()
@@ -279,7 +281,7 @@ class Autopilot:
 
         # TODO: Add runway lat long alt
         if not arrival_runway == "":
-            lat_tmp, long_tmp, alt_tmp = Nav.get_runway_coord(arrival_airport, arrival_runway)
+            lat_tmp, long_tmp, alt_tmp = Nav.get_runway_coord(arrival_airport, arrival_runway[2:])
             if self.flight_plan_name[index][-1] == arrival_runway:
                 self.flight_plan_lat[index][-1] = lat_tmp
                 self.flight_plan_long[index][-1] = long_tmp
@@ -294,7 +296,7 @@ class Autopilot:
 
                 # Add opposite direction runway for alignment
                 # TODO: this is a little hacky... maybe project a point out runway length?
-                opp_runway = str(int(((int(arrival_runway[0:2]) * 10 + 180) % 360) / 10)).zfill(2)
+                opp_runway = str(int(((int(arrival_runway[2:4]) * 10 + 180) % 360) / 10)).zfill(2)
                 rwy_letter = arrival_runway[-1]
                 if rwy_letter == 'L':
                     opp_runway = opp_runway + 'R'
@@ -304,7 +306,7 @@ class Autopilot:
                     opp_runway = opp_runway + 'C'
 
                 lat_tmp, long_tmp, alt_tmp = Nav.get_runway_coord(arrival_airport, opp_runway)
-                self.flight_plan_name[index].append(f'{arrival_airport}_RW{arrival_runway}_END')
+                self.flight_plan_name[index].append(f'{arrival_airport}_{arrival_runway}_END')
                 self.flight_plan_lat[index].append(lat_tmp)
                 self.flight_plan_long[index].append(long_tmp)
                 self.flight_plan_target_alt[index].append(alt_tmp)
@@ -321,6 +323,13 @@ class Autopilot:
         # for i, val in reversed(list(enumerate(self.flight_plan_target_speed[n]))):
         #     if val == -1:
         #         self.flight_plan_target_speed[n][i] = self.flight_plan_target_speed[n][i+1]
+
+        # Add departure airport
+        self.flight_plan_name[index].insert(0, f'{departure_airport} {departure_runway}')
+        self.flight_plan_lat[index].insert(0, lat_dep)
+        self.flight_plan_long[index].insert(0, long_dep)
+        self.flight_plan_target_alt[index].insert(0, alt_dep)
+        self.flight_plan_target_speed[index].insert(0, 0)
 
         print("Set flight plan final:", self.flight_plan_name[index])
 
