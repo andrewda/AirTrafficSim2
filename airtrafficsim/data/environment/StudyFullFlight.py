@@ -45,10 +45,11 @@ class StudyFullFlight(RealTimeEnvironment):
         for callsign in self.traffic.call_sign:
             index = np.where(self.traffic.call_sign == callsign)[0][0]
             if self.aircraft[callsign].get_next_wp() is None:
-                index = np.where(self.traffic.call_sign == callsign)[0][0]
-                self.traffic.del_aircraft(self.traffic.index[index])
+                # index = np.where(self.traffic.call_sign == callsign)[0][0]
+                # self.traffic.del_aircraft(self.traffic.index[index])
+                self.aircraft[callsign].set_flight_phase(FlightPhase.TAXI_DEST)
                 self.last_sent_time = 0
-                del self.aircraft[callsign]
+                # del self.aircraft[callsign]
 
         return super().should_end()
 
@@ -111,5 +112,10 @@ class StudyFullFlight(RealTimeEnvironment):
 
         elif command == "flight_plan":
             self.aircraft[aircraft].set_flight_plan(**payload)
+
+        elif command == "delete":
+            index = np.where(self.traffic.call_sign == aircraft)[0][0]
+            self.traffic.del_aircraft(self.traffic.index[index])
+            del self.aircraft[aircraft]
 
         return True

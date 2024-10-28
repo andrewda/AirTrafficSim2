@@ -137,6 +137,29 @@ class Cal:
                               Cal.cal_great_circle_bearing(path_lat1, path_long1, path_lat2, path_long2))) * 6371.009
 
     @staticmethod
+    def cal_dist_off_path(lat1, lon1, lat2, lon2, lat0, lon0):
+        # Convert average latitude to radians for scaling factor
+        lat_avg = np.deg2rad((lat0 + lat1 + lat2) / 3.0)
+
+        # Scaling factors for latitude and longitude (approximate meters per degree)
+        meters_per_deg_lat = 111320.0  # Average meters per degree latitude
+        meters_per_deg_lon = 111320.0 * np.cos(lat_avg)  # Adjusted for latitude
+
+        # Differences in meters
+        delta_lat1_meters = (lat0 - lat1) * meters_per_deg_lat
+        delta_lon1_meters = (lon0 - lon1) * meters_per_deg_lon
+
+        delta_lat2_meters = (lat2 - lat1) * meters_per_deg_lat
+        delta_lon2_meters = (lon2 - lon1) * meters_per_deg_lon
+
+        # Numerator and denominator for the signed distance formula
+        numerator = delta_lon2_meters * delta_lat1_meters - delta_lon1_meters * delta_lat2_meters
+        denominator = np.sqrt(delta_lon2_meters**2 + delta_lat2_meters**2)
+
+        # Compute the signed distance (positive: left of path, negative: right of path)
+        return numerator / denominator
+
+    @staticmethod
     def cal_angle_diff(current_angle, target_angle):
         """
         Calculate the difference of two angle (+ve clockwise, -ve anti-clockwise.

@@ -47,6 +47,10 @@ class Autopilot:
         """Autopilot target latitude for next waypoint [deg]"""
         self.long_next = np.zeros([0])
         """Autopilot target longitude for next waypoint [deg]"""
+        self.lat_prev = np.zeros([0])
+        """Autopilot target latitude for previous waypoint [deg]"""
+        self.long_prev = np.zeros([0])
+        """Autopilot target longitude for previous waypoint [deg]"""
         self.hv_next_wp = np.ones([0], dtype=bool)
         """Autupilot hv next waypoint [bool]"""
         self.dist = np.zeros([0])
@@ -141,6 +145,8 @@ class Autopilot:
         self.long = np.append(self.long, long)
         self.lat_next = np.append(self.lat_next, 0.0)
         self.long_next = np.append(self.long_next, 0.0)
+        self.lat_prev = np.append(self.lat_prev, 0.0)
+        self.long_prev = np.append(self.long_prev, 0.0)
         self.hv_next_wp = np.append(self.hv_next_wp, False)
         self.dist = np.append(self.dist, 0.0)
         self.flight_plan_index = np.append(self.flight_plan_index, 0)
@@ -287,7 +293,7 @@ class Autopilot:
                 self.flight_plan_long[index][-1] = long_tmp
                 self.flight_plan_target_alt[index][-1] = alt_tmp
             else:
-                self.flight_plan_name[index].append(f'{arrival_airport}_RW{arrival_runway}')
+                self.flight_plan_name[index].append(f'{arrival_airport}_{arrival_runway}')
                 self.flight_plan_lat[index].append(lat_tmp)
                 self.flight_plan_long[index].append(long_tmp)
                 self.flight_plan_target_alt[index].append(alt_tmp)
@@ -356,6 +362,8 @@ class Autopilot:
         self.long = np.delete(self.long, index)
         self.lat_next = np.delete(self.lat_next, index)
         self.long_next = np.delete(self.long_next, index)
+        self.lat_prev = np.delete(self.lat_prev, index)
+        self.long_prev = np.delete(self.long_prev, index)
         self.hv_next_wp = np.delete(self.hv_next_wp, index)
         self.dist = np.delete(self.dist, index)
         self.flight_plan_index = np.delete(self.flight_plan_index, index)
@@ -399,8 +407,17 @@ class Autopilot:
             if val < len(self.flight_plan_name[i]):
                 # Target Flight Plan Lat/Long
                 # print(f"Target waypoint: {self.flight_plan_name[i][val]} @ {self.flight_plan_lat[i][val]}, {self.flight_plan_long[i][val]}")
+
+                self.lat_prev[i] = self.flight_plan_lat[i][val-1]
+                self.long_prev[i] = self.flight_plan_long[i][val-1]
+
                 self.lat[i] = self.flight_plan_lat[i][val]
                 self.long[i] = self.flight_plan_long[i][val]
+
+                # print('prev waypoint (we just passed):', self.flight_plan_name[i][val-1])
+                # print('curr waypoint (we are going to):', self.flight_plan_name[i][val])
+                # print('next waypoint (we will be going to):', self.flight_plan_name[i][val+1])
+
                 if val == len(self.flight_plan_name[i]) - 1:
                     self.hv_next_wp[i] = False
                 else:
@@ -463,12 +480,31 @@ class Autopilot:
         self.dist = np.where(self.flight_plan_updated, dist, self.dist)
         self.flight_plan_updated = np.where(self.flight_plan_updated, False, self.flight_plan_updated)
 
+        # cross_track = Cal.cal_cross_track_dist(self.lat_prev, self.long_prev, self.lat, self.long, traffic.lat, traffic.long)
+        # cross_track2 = Cal.cal_dist_off_path(self.lat_prev, self.long_prev, self.lat, self.long, traffic.lat, traffic.long)
+        # print(cross_track, cross_track2)
+
         # Fly by turn
         turn_radius = traffic.perf.cal_turn_radius(traffic.perf.get_bank_angles(traffic.configuration), Unit.kts2mps(traffic.tas)) / 1000.0     #km
         next_track_angle = np.where(self.hv_next_wp, Cal.cal_great_circle_bearing(self.lat, self.long, self.lat_next, self.long_next), self.track_angle)    # Next track angle to next next waypoint
         curr_track_angle = Cal.cal_great_circle_bearing(traffic.lat, traffic.long, self.lat, self.long) # Current track angle to next waypoint #!TODO consider current heading
-        turn_dist = turn_radius * np.tan(np.deg2rad(np.abs(Cal.cal_angle_diff(next_track_angle, curr_track_angle)) / 2.0))    # Distance to turn
-        self.track_angle =  np.where(self.lateral_mode == APLateralMode.HEADING, 0.0, np.where(dist < turn_dist, np.where(self.hv_next_wp, next_track_angle, self.track_angle), np.where(dist < 1.0, self.track_angle, curr_track_angle)))
+        turn_dist = turn_radius * np.tan(np.deg2rad(np.abs(Cal.cal_angle_diff(next_track_angle, curr_track_angle)) / 2.0)) * 0.6    # Distance to turn
+
+        # Adjust track angle for cross track
+        cross_track = Cal.cal_dist_off_path(self.lat_prev, self.long_prev, self.lat, self.long, traffic.lat, traffic.long)
+        # Apply 20 degree correction angle when cross track is greater than 200m, otherwise scale down to 0
+        correction = np.where(np.abs(cross_track) > 200, np.sign(cross_track) * 20, 20 * (1 - np.exp(-cross_track / 40)))
+        curr_track_angle = curr_track_angle + correction
+
+        # print(cross_track, correction, curr_track_angle)
+
+        lnav_track_angle = np.where(
+            dist < turn_dist,
+            np.where(self.hv_next_wp, next_track_angle, self.track_angle),
+            np.where(dist < 1.0, self.track_angle, curr_track_angle)
+        )
+
+        self.track_angle =  np.where(self.lateral_mode == APLateralMode.HEADING, 0.0, lnav_track_angle)
         self.heading = np.where(self.lateral_mode == APLateralMode.HEADING, self.heading, self.track_angle + np.arcsin(traffic.weather.wind_speed / traffic.tas * np.sin(self.track_angle - traffic.weather.wind_direction))) #https://www.omnicalculator.com/physics/wind-correction-angle
 
         update_next_wp = (self.lateral_mode == APLateralMode.LNAV) & (dist > self.dist) & (np.abs(Cal.cal_angle_diff(traffic.heading, next_track_angle)) < 1.0)
