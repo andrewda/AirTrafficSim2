@@ -37,6 +37,8 @@ class Environment:
 
         self.stopped = False
 
+        self.weather = None
+
         # File IO
         self.file_name = file_name+'-' + \
             self.datetime.isoformat(timespec='seconds')
@@ -287,5 +289,5 @@ class Environment:
 
         socketio.emit('simulationData', {'czml': document, 'progress': self.global_time /
                       self.end_time, 'packet_id': self.packet_id, 'graph': graph_data,
-                      'aircraft': aircraft_data})
+                      'aircraft': aircraft_data, 'weather': self.weather})
         self.packet_id = self.packet_id + 1

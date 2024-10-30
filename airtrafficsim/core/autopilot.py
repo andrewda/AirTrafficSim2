@@ -110,7 +110,7 @@ class Autopilot:
         self.holding_info = []
 
 
-    def add_aircraft(self, lat, long, alt, heading, cas, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, cruise_alt):
+    def add_aircraft(self, lat, long, alt, heading, cas, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt):
         """
         Add aircraft and init flight plan
 
@@ -176,7 +176,7 @@ class Autopilot:
         self.cruise_alt.append(cruise_alt)
         self.flight_plan_updated = np.append(self.flight_plan_updated, True)
 
-        self.set_flight_plan(-1, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, 0, cruise_alt)
+        self.set_flight_plan(-1, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt)
 
 
     def set_flight_plan(self, index, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt):
@@ -200,7 +200,8 @@ class Autopilot:
         self.flight_plan_target_alt[index] = []
         self.flight_plan_target_speed[index] = []
 
-        self.flight_plan_index[index] = flight_plan_index
+        # Add 1 to account for origin
+        self.flight_plan_index[index] = flight_plan_index + 1
         self.flight_plan_updated[index] = True
 
         # if not flight_plan == []:
@@ -244,14 +245,24 @@ class Autopilot:
             # Add Initial Approach to flight plan
             waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway[2:], approach, appch="A", iaf=self.flight_plan_name[index][-1])
             if len(waypoint) > 0:
-                # Remove last element of flight plan which should be equal to iaf
-                self.flight_plan_name[index].pop()
-                self.flight_plan_target_alt[index].pop()
-                self.flight_plan_target_speed[index].pop()
-                # Add Initial Approach flight plan
-                self.flight_plan_name[index].extend(waypoint)
-                self.flight_plan_target_alt[index].extend(alt_restriction)
-                self.flight_plan_target_speed[index].extend(speed_restriction)
+                # All waypoints are the same (can happen for IAPs where IAF is also a procedure turn)
+                if len(set(waypoint)) == 1:
+                    self.flight_plan_name[index].pop()
+                    self.flight_plan_target_alt[index].pop()
+                    self.flight_plan_target_speed[index].pop()
+                    # Add Initial Approach flight plan
+                    self.flight_plan_name[index].extend(waypoint[:1])
+                    self.flight_plan_target_alt[index].extend(alt_restriction[:1])
+                    self.flight_plan_target_speed[index].extend(speed_restriction[:1])
+                else:
+                    # Remove last element of flight plan which should be equal to iaf
+                    self.flight_plan_name[index].pop()
+                    self.flight_plan_target_alt[index].pop()
+                    self.flight_plan_target_speed[index].pop()
+                    # Add Initial Approach flight plan
+                    self.flight_plan_name[index].extend(waypoint)
+                    self.flight_plan_target_alt[index].extend(alt_restriction)
+                    self.flight_plan_target_speed[index].extend(speed_restriction)
 
             # Add Final Approach to flight plan
             waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway[2:], approach, appch=approach[0])

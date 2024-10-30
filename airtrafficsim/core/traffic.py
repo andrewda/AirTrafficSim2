@@ -132,7 +132,7 @@ class Traffic:
         self.weather = Weather(start_time, end_time, weather_mode, file_name)
         """Weather class"""
 
-    def add_aircraft(self, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, cruise_alt):
+    def add_aircraft(self, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt):
         """
         Add an aircraft to traffic array.
 
@@ -149,7 +149,7 @@ class Traffic:
         self.perf.add_aircraft(aircraft_type)
         self.weather.add_aircraft(alt, self.perf)
         self.ap.add_aircraft(lat, long, alt, heading, cas, departure_airport, departure_runway,
-                             sid, arrival_airport, arrival_runway, star, approach, flight_plan, cruise_alt)
+                             sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt)
 
         self.index = np.append(self.index, self.n)
         self.call_sign = np.append(self.call_sign, call_sign)

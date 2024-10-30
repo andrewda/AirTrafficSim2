@@ -156,8 +156,7 @@ class Cal:
         numerator = delta_lon2_meters * delta_lat1_meters - delta_lon1_meters * delta_lat2_meters
         denominator = np.sqrt(delta_lon2_meters**2 + delta_lat2_meters**2)
 
-        # Compute the signed distance (positive: left of path, negative: right of path)
-        return numerator / denominator
+        return np.where(denominator == 0, 0.0, numerator / denominator)
 
     @staticmethod
     def cal_angle_diff(current_angle, target_angle):

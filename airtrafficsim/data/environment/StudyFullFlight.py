@@ -8,6 +8,7 @@ from airtrafficsim.core.realtime_environment import RealTimeEnvironment
 from airtrafficsim.core.aircraft import Aircraft
 from airtrafficsim.core.navigation import Nav
 from airtrafficsim.utils.enums import Config, FlightPhase
+from airtrafficsim.utils.calculation import Cal
 
 
 def extract_number(string):
@@ -25,6 +26,7 @@ class StudyFullFlight(RealTimeEnvironment):
                          performance_mode="BADA"
                         )
 
+        self.weather = None
         self.aircraft = {}
 
         # Add aircraft
@@ -57,44 +59,63 @@ class StudyFullFlight(RealTimeEnvironment):
         # User algorithm
         pass
 
-        # if self.global_time == 30:
-        #     lat_dep, long_dep, alt_dep = Nav.get_runway_coord("KPDX", "28L")
-
-        #     self.aircraft['HMT 120'] = Aircraft(self.traffic, call_sign="HMT 120", aircraft_type="A320", flight_phase=FlightPhase.TAKEOFF, configuration=Config.TAKEOFF,
-        #                               lat=lat_dep, long=long_dep, alt=alt_dep, heading=280.0, cas=149.0,
-        #                               fuel_weight=5273.0, payload_weight=12000.0,
-        #                               departure_airport="KPDX", departure_runway="RW28L", sid="",
-        #                               arrival_airport="KSLE", arrival_runway="13", star="", approach="R13",
-        #                               flight_plan=["YIBPU", "UBG"],
-        #                               cruise_alt=18000)
-
     def handle_command(self, aircraft, command, payload):
         print(f'received command {command} for aircraft {aircraft} with payload {payload}')
 
         if command == "init":
-            for aircraft_config in payload:
-                callsign = aircraft_config['callsign']
-                print(aircraft_config['departure_airport'], aircraft_config['departure_runway'][2:])
-                lat_dep, long_dep, alt_dep = Nav.get_runway_coord(aircraft_config['departure_airport'], aircraft_config['departure_runway'][2:])
+            if "weather" in payload:
+                self.weather = payload['weather']
 
-                default_config = {
-                    # "call_sign": callsign,
-                    "aircraft_type": "C208",
-                    "flight_phase": FlightPhase.TAXI_ORIGIN,
-                    "configuration": Config.TAKEOFF,
-                    "lat": lat_dep,
-                    "long": long_dep,
-                    "alt": alt_dep,
-                    "heading": extract_number(aircraft_config['departure_runway']) * 100,
-                    "cas": 80.0,
-                    "fuel_weight": 900,
-                    "payload_weight": 0.0,
-                    "cruise_alt": 18000,
-                    "sid": "",
-                    "star": "",
-                }
+            if "aircraft" in payload:
+                for aircraft_config in payload['aircraft']:
+                    callsign = aircraft_config['callsign']
 
-                self.aircraft[callsign] = Aircraft(self.traffic, **default_config, **aircraft_config)
+                    lat_rwy, long_rwy, alt_rwy = Nav.get_runway_coord(aircraft_config['departure_airport'], aircraft_config['departure_runway'][2:])
+
+                    lat_dep, long_dep, alt_dep, heading_dep = None, None, None, None
+
+                    if 'starting_leg' in aircraft_config:
+                        starting_fix = aircraft_config['flight_plan'][aircraft_config['starting_leg']]
+                        next_fix = aircraft_config['flight_plan'][aircraft_config['starting_leg'] + 1]
+                        lat_dep, long_dep = Nav.get_wp_coord(starting_fix, lat_rwy, long_rwy)
+                        lat_next, long_next = Nav.get_wp_coord(next_fix, lat_rwy, long_rwy)
+                        heading_dep = Cal.cal_great_circle_bearing(lat_dep, long_dep, lat_next, long_next)
+                        alt_dep = aircraft_config['starting_alt']
+
+                        aircraft_config['flight_plan_index'] = aircraft_config['starting_leg']
+
+                        if 'cas' not in aircraft_config:
+                            aircraft_config['cas'] = 130
+                        if 'flight_phase' not in aircraft_config:
+                            aircraft_config['flight_phase'] = FlightPhase.CRUISE
+                        if 'configuration' not in aircraft_config:
+                            aircraft_config['configuration'] = Config.CLEAN
+
+                        del aircraft_config['starting_leg']
+                        del aircraft_config['starting_alt']
+                    else:
+                        lat_dep, long_dep, alt_dep = lat_rwy, long_rwy, alt_rwy
+                        lat_next, long_next = Nav.get_wp_coord(aircraft_config['flight_plan'][0], lat_rwy, long_rwy)
+                        heading_dep = Cal.cal_great_circle_bearing(lat_dep, long_dep, lat_next, long_next)
+
+                    default_config = {
+                        # "call_sign": callsign,
+                        "aircraft_type": "C208",
+                        "flight_phase": FlightPhase.TAXI_ORIGIN,
+                        "configuration": Config.TAKEOFF,
+                        "lat": lat_dep,
+                        "long": long_dep,
+                        "alt": alt_dep,
+                        "heading": heading_dep,
+                        "cas": 80.0,
+                        "fuel_weight": 900,
+                        "payload_weight": 0.0,
+                        "cruise_alt": 10000,
+                        "sid": "",
+                        "star": "",
+                    }
+
+                    self.aircraft[callsign] = Aircraft(self.traffic, **{**default_config, **aircraft_config})
 
 
         elif command == "takeoff":

@@ -160,6 +160,9 @@ class Nav:
         # Combine fix and nav
         wp_lat = np.append(fix_lat, nav_lat)
         wp_long = np.append(fix_long, nav_long)
+        if len(wp_lat) == 0:
+            print(f"WARNING: No waypoint found for {name}")
+            return None, None
         # Find index of minimum distance
         index = np.argmin(Cal.cal_great_circle_dist(
             lat, long, wp_lat, wp_long), axis=0)
