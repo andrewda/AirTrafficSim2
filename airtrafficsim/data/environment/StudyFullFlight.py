@@ -55,14 +55,13 @@ class StudyFullFlight(RealTimeEnvironment):
 
         return super().should_end()
 
-    def atc_command(self):
-        # User algorithm
-        pass
-
     def handle_command(self, aircraft, command, payload):
         print(f'received command {command} for aircraft {aircraft} with payload {payload}')
 
         if command == "init":
+            if "paused" in payload:
+                self.paused = payload['paused']
+
             if "weather" in payload:
                 self.weather = payload['weather']
 
@@ -138,5 +137,8 @@ class StudyFullFlight(RealTimeEnvironment):
             index = np.where(self.traffic.call_sign == aircraft)[0][0]
             self.traffic.del_aircraft(self.traffic.index[index])
             del self.aircraft[aircraft]
+
+        elif command == "paused":
+            self.paused = payload
 
         return True

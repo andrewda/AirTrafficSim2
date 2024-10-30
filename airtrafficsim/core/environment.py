@@ -35,6 +35,7 @@ class Environment:
         self.packet_id = 0
         self.buffer_data = []
 
+        self.paused = False
         self.stopped = False
 
         self.weather = None
@@ -73,18 +74,22 @@ class Environment:
         """
         return self.stopped
 
+    def is_paused(self):
+        return self.paused
+
     def step(self, socketio=None):
         """
         Conduct one simulation timestep.
         """
         start_time = time.time()
 
-        # Run atc command
-        self.atc_command()
-        # Run update loop
-        self.traffic.update(self.global_time)
-        # Save to file
-        self.save()
+        if not self.is_paused():
+            # Run atc command
+            self.atc_command()
+            # Run update loop
+            self.traffic.update(self.global_time)
+            # Save to file
+            self.save()
 
         # print("Environment - step() for global time", self.global_time,
         #       "/", self.end_time, "finished at", time.time() - start_time)
