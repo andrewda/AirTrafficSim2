@@ -56,6 +56,8 @@ class StudyFullFlight(RealTimeEnvironment):
         return super().should_end()
 
     def handle_command(self, aircraft, command, payload):
+        super().handle_command(aircraft, command, payload)
+
         print(f'received command {command} for aircraft {aircraft} with payload {payload}')
 
         if command == "init":
@@ -116,7 +118,6 @@ class StudyFullFlight(RealTimeEnvironment):
 
                     self.aircraft[callsign] = Aircraft(self.traffic, **{**default_config, **aircraft_config})
 
-
         elif command == "takeoff":
             self.aircraft[aircraft].set_flight_phase(FlightPhase.TAKEOFF)
 
@@ -140,5 +141,8 @@ class StudyFullFlight(RealTimeEnvironment):
 
         elif command == "paused":
             self.paused = payload
+
+        elif command == "frequency":
+            self.aircraft[aircraft].set_frequency(payload)
 
         return True

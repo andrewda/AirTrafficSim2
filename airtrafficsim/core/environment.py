@@ -16,7 +16,7 @@ class Environment:
 
     """
 
-    def __init__(self, file_name, start_time, end_time, weather_mode="ISA", performance_mode="BADA"):
+    def __init__(self, file_name, start_time, end_time, weather_mode="ISA", performance_mode="BADA", create_log_file=True):
         # User setting
         self.start_time = start_time
         """The simulation start time [datetime object]"""
@@ -40,27 +40,28 @@ class Environment:
 
         self.weather = None
 
-        # File IO
-        self.file_name = file_name+'-' + \
-            self.datetime.isoformat(timespec='seconds')
-        self.folder_path = Path(__file__).parent.parent.resolve().joinpath(
-            'data/result/'+self.file_name)
+        if create_log_file:
+            self.create_log_files(file_name)
+
+
+    def create_log_files(self, directory_name):
+        self.file_name = datetime.now().isoformat(timespec='seconds') + '-' + directory_name
+        self.folder_path = Path(__file__).parent.parent.resolve().joinpath('data/result/' + self.file_name)
         self.folder_path.mkdir()
-        self.file_path = self.folder_path.joinpath(self.file_name+'.csv')
-        self.writer = csv.writer(open(self.file_path, 'w+'))
-        self.header = ['timestep', 'timestamp', 'id', 'callsign', 'lat', 'long', 'alt',
-                       'cas', 'tas', 'mach', 'vs',
-                       'heading', 'bank_angle', 'path_angle',
-                       'mass', 'fuel_consumed',
-                       'thrust', 'drag', 'esf', 'accel',
-                       'ap_track_angle', 'ap_heading', 'ap_alt', 'ap_cas', 'ap_mach', 'ap_procedural_speed',
-                       'ap_wp_index', 'ap_next_wp', 'ap_dist_to_next_fix', 'ap_holding_round',
+
+        if 'sim_file' in self.__dict__:
+            self.sim_file.close()
+
+        self.sim_file_path = self.folder_path.joinpath('simulation.csv')
+        self.sim_file = open(self.sim_file_path, 'w+')
+        self.sim_writer = csv.writer(self.sim_file)
+
+        self.sim_header = ['timestamp', 'id', 'callsign', 'lat', 'long', 'alt',
+                       'cas', 'tas', 'vs', 'heading', 'bank_angle', 'path_angle',
+                       'ap_track_angle', 'ap_heading', 'ap_alt', 'ap_cas', 'ap_procedural_speed',
+                       'ap_wp_index', 'ap_next_wp', 'ap_dist_to_next_fix',
                        'flight_phase', 'configuration', 'speed_mode', 'vertical_mode', 'ap_speed_mode', 'ap_lateral_mode', 'ap_throttle_mode']
-        self.writer.writerow(self.header)
-        self.header.remove('timestep')
-        self.header.remove('timestamp')
-        self.header.remove('id')
-        self.header.remove('callsign')
+        self.sim_writer.writerow(self.sim_header)
 
     def atc_command(self):
         """
@@ -117,7 +118,8 @@ class Environment:
                 self.last_sent_time = now
                 self.buffer_data = []
 
-        self.global_time += 1
+        if not self.is_paused():
+            self.global_time += 1
 
     def run(self, socketio=None):
         """
@@ -128,10 +130,6 @@ class Environment:
         socketio : socketio object, optional
             Socketio object to handle communciation when running simulation, by default None
         """
-        if socketio:
-            socketio.emit('simulationEnvironment', {
-                          'header': self.header, 'file': self.file_name})
-
         for _ in range(self.end_time+1):
             # One timestep
 
@@ -155,26 +153,29 @@ class Environment:
         """
         Save all states variable of one timestemp to csv file.
         """
-        pass
-        # data = np.column_stack((np.full(len(self.traffic.index), self.global_time), np.full(len(self.traffic.index), (self.start_time + timedelta(seconds=self.global_time)).isoformat(timespec='seconds')), self.traffic.index, self.traffic.call_sign, self.traffic.lat, self.traffic.long, self.traffic.alt,
-        #                         self.traffic.cas, self.traffic.tas, self.traffic.mach, self.traffic.vs,
-        #                         self.traffic.heading, self.traffic.bank_angle, self.traffic.path_angle,
-        #                         self.traffic.mass, self.traffic.fuel_consumed,
-        #                         self.traffic.perf.thrust, self.traffic.perf.drag, self.traffic.perf.esf, self.traffic.accel,
-        #                         self.traffic.ap.track_angle, self.traffic.ap.heading, self.traffic.ap.alt, self.traffic.ap.cas, self.traffic.ap.mach, self.traffic.ap.procedure_speed,
-        #                         self.traffic.ap.flight_plan_index, [self.traffic.ap.flight_plan_name[i][val] if (val < len(self.traffic.ap.flight_plan_name[i])) else "NONE" for i, val in enumerate(
-        #                             self.traffic.ap.flight_plan_index)], self.traffic.ap.dist, self.traffic.ap.holding_round,  # autopilot variable
-        #                         [FlightPhase(i).name for i in self.traffic.flight_phase], [Config(i).name for i in self.traffic.configuration], [
-        #     SpeedMode(i).name for i in self.traffic.speed_mode], [VerticalMode(i).name for i in self.traffic.vertical_mode],
-        #     [APSpeedMode(i).name for i in self.traffic.ap.speed_mode], [APLateralMode(i).name for i in self.traffic.ap.lateral_mode], [APThrottleMode(i).name for i in self.traffic.ap.auto_throttle_mode]))  # mode
+        if 'sim_writer' not in self.__dict__:
+            return
 
-        # self.writer.writerows(data)
+        current_time = datetime.now().isoformat()
+
+        data = np.column_stack(([current_time for i in self.traffic.index], self.traffic.index, self.traffic.call_sign, self.traffic.lat, self.traffic.long, self.traffic.alt,
+                                self.traffic.cas, self.traffic.tas, self.traffic.vs,
+                                self.traffic.heading, self.traffic.bank_angle, self.traffic.path_angle,
+                                self.traffic.ap.track_angle, self.traffic.ap.heading, self.traffic.ap.alt, self.traffic.ap.cas, self.traffic.ap.procedure_speed,
+                                self.traffic.ap.flight_plan_index, [self.traffic.ap.flight_plan_name[i][val] if (val < len(self.traffic.ap.flight_plan_name[i])) else "NONE" for i, val in enumerate(
+                                    self.traffic.ap.flight_plan_index)], self.traffic.ap.dist, self.traffic.ap.holding_round,  # autopilot variable
+                                [FlightPhase(i).name for i in self.traffic.flight_phase], [Config(i).name for i in self.traffic.configuration], [
+            SpeedMode(i).name for i in self.traffic.speed_mode], [VerticalMode(i).name for i in self.traffic.vertical_mode],
+            [APSpeedMode(i).name for i in self.traffic.ap.speed_mode], [APLateralMode(i).name for i in self.traffic.ap.lateral_mode], [APThrottleMode(i).name for i in self.traffic.ap.auto_throttle_mode]))  # mode
+
+        self.sim_writer.writerows(data)
+        self.sim_file.flush()
 
     def export_to_csv(self):
         """
         Export the simulation result to a csv file.
         """
-        df = pd.read_csv(self.file_path)
+        df = pd.read_csv(self.sim_file_path)
         for id in df['id'].unique():
             df[df['id'] == id].to_csv(
                 self.folder_path.joinpath(str(id)+'.csv'), index=False)
@@ -189,76 +190,6 @@ class Environment:
         socketio : socketio object
             socketio object to handle communciation when running simulation
         """
-        document = [{
-            "id": "document",
-            "name": "simulation",
-            "version": "1.0",
-            "clock": {
-                "interval": self.start_time.isoformat()+"/"+(self.start_time + timedelta(seconds=self.end_time)).isoformat(),
-                "currentTime": (datetime.now() - timedelta(seconds=3)).isoformat(),
-            }
-        }]
-
-        df_buffer = pd.DataFrame(self.buffer_data)
-        if self.buffer_data:
-            for id in df_buffer.iloc[:, 0].unique():
-                content = df_buffer[df_buffer.iloc[:, 0] == id]
-
-                call_sign = content.iloc[0, 1]
-                positions = content.iloc[:, [2, 3, 4, 5]
-                                         ].to_numpy().flatten().tolist()
-                label = [{"interval": time+"/"+(self.start_time + timedelta(seconds=self.end_time)).isoformat(),
-                          "string": call_sign+"\n"+str(np.floor(Unit.m2ft(alt)))+"ft "+str(np.floor(cas))+"kt"}
-                         for time, alt, cas in zip(content.iloc[:, 2].to_numpy(), content.iloc[:, 5].to_numpy(dtype=float), content.iloc[:, 6].to_numpy(dtype=float))]
-
-                trajectory = {
-                    "id": call_sign,
-                    "position": {
-                        "cartographicDegrees": positions
-                    },
-                    "point": {
-                        "pixelSize": 10,
-                        "color": {
-                            "rgba": [39, 245, 106, 215]
-                        }
-                    },
-                    "path": {
-                        "leadTime": 0,
-                        "trailTime": 30,
-                        "distanceDisplayCondition": {
-                            "distanceDisplayCondition": [0, 1500000]
-                        }
-                    },
-                    "label": {
-                        "text": label,
-                        "font": "9px sans-serif",
-                        "horizontalOrigin": "LEFT",
-                        "pixelOffset": {
-                                "cartesian2": [20, 20],
-                        },
-                        "distanceDisplayCondition": {
-                            "distanceDisplayCondition": [0, 1500000]
-                        },
-                        "showBackground": "false",
-                        "backgroundColor": {
-                            "rgba": [0, 0, 0, 50]
-                        }
-                    }
-                }
-                document.append(trajectory)
-
-        graph_data = []
-        if self.graph_type != 'None':
-            df = pd.read_csv(self.file_path)
-            for id in df['id'].unique():
-                content = df[df['id'] == id]
-                graph_data.append({
-                    "x": content['timestep'].to_list(),
-                    "y": content[self.graph_type].to_list(),
-                    "name": content.iloc[0]['callsign'],
-                    "type": 'scattergl',
-                    "mode": 'lines',
-                })
 
         # Additional aircraft telemetry
         # TODO: emit at a slower rate? probably not necessary for now
@@ -281,6 +212,7 @@ class Environment:
                 'flightPlanPos': list(zip(self.traffic.ap.flight_plan_lat[i], self.traffic.ap.flight_plan_long[i])),
                 'flightPlanTargetSpeed': self.traffic.ap.flight_plan_target_speed[i],
                 'flightPlanIndex': self.traffic.ap.flight_plan_index[i].item(),
+                'dist': self.traffic.ap.dist[i],
                 'departureAirport': self.traffic.ap.departure_airport[i],
                 'departureRunway': self.traffic.ap.departure_runway[i],
                 'sid': self.traffic.ap.sid[i],
@@ -288,11 +220,17 @@ class Environment:
                 'arrivalRunway': self.traffic.ap.arrival_runway[i],
                 'star': self.traffic.ap.star[i],
                 'approach': self.traffic.ap.approach[i],
+                'frequency': self.traffic.frequency[i],
             }
             for i in range(len(self.traffic.index))
         ]
 
-        socketio.emit('simulationData', {'czml': document, 'progress': self.global_time /
-                      self.end_time, 'packet_id': self.packet_id, 'graph': graph_data,
-                      'aircraft': aircraft_data, 'weather': self.weather})
+        socketio.emit('simulationData', {
+            'packet_id': self.packet_id,
+            'global_time': self.global_time,
+            'aircraft': aircraft_data,
+            'weather': self.weather,
+            'paused': self.paused
+        })
+
         self.packet_id = self.packet_id + 1

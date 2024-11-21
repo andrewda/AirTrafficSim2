@@ -132,7 +132,10 @@ class Traffic:
         self.weather = Weather(start_time, end_time, weather_mode, file_name)
         """Weather class"""
 
-    def add_aircraft(self, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt):
+        # Misc
+        self.frequency = []
+
+    def add_aircraft(self, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt, initial_frequency):
         """
         Add an aircraft to traffic array.
 
@@ -195,6 +198,8 @@ class Traffic:
         self.max_alt = self.perf.cal_maximum_alt(self.weather.d_T, self.mass)
         self.max_cas, self.max_mach = self.perf.cal_maximum_speed()
 
+        self.frequency.append(initial_frequency)
+
         # Increase aircraft count
         self.n = self.n + 1
 
@@ -248,6 +253,8 @@ class Traffic:
         self.perf.del_aircraft(i)
         self.ap.del_aircraft(i)
         self.weather.del_aircraft(i)
+
+        del self.frequency[i]
 
     def update(self, global_time, d_t=1):
         """

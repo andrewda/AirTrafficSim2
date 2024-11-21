@@ -499,7 +499,7 @@ class Autopilot:
         turn_radius = traffic.perf.cal_turn_radius(traffic.perf.get_bank_angles(traffic.configuration), Unit.kts2mps(traffic.tas)) / 1000.0     #km
         next_track_angle = np.where(self.hv_next_wp, Cal.cal_great_circle_bearing(self.lat, self.long, self.lat_next, self.long_next), self.track_angle)    # Next track angle to next next waypoint
         curr_track_angle = Cal.cal_great_circle_bearing(traffic.lat, traffic.long, self.lat, self.long) # Current track angle to next waypoint #!TODO consider current heading
-        turn_dist = turn_radius * np.tan(np.deg2rad(np.abs(Cal.cal_angle_diff(next_track_angle, curr_track_angle)) / 2.0)) * 0.6    # Distance to turn
+        turn_dist = turn_radius * np.tan(np.deg2rad(np.abs(Cal.cal_angle_diff(next_track_angle, curr_track_angle)) / 2.0)) * 0.8    # Distance to turn
 
         # Adjust track angle for cross track
         cross_track = Cal.cal_dist_off_path(self.lat_prev, self.long_prev, self.lat, self.long, traffic.lat, traffic.long)

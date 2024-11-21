@@ -12,7 +12,7 @@ class Aircraft:
     Aircraft class to represent the states of one individual aircraft, including get and set functions.
     """
 
-    def __init__(self, traffic: Traffic, callsign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport="", departure_runway="", sid="", arrival_airport="", arrival_runway="", star="", approach="", flight_plan=[], flight_plan_index=0, cruise_alt=-1):
+    def __init__(self, traffic: Traffic, callsign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport="", departure_runway="", sid="", arrival_airport="", arrival_runway="", star="", approach="", flight_plan=[], flight_plan_index=0, cruise_alt=-1, initial_frequency=""):
         """
         Initialize one aircraft and add the aircraft to traffic array.
 
@@ -60,10 +60,13 @@ class Aircraft:
             Array of waypoints that the aircraft will fly, by default []
         cruise_alt : int, optional
             Target cruise altitude [ft], by default -1
+        initial_frequency : string, optional
+            Initial frequency of the aircraft, by default ""
         """
         self.traffic = traffic          # Pass traffic array reference
         self.index = self.traffic.add_aircraft(callsign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight,
-                                               departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt)        # Add aircraft. Obtain aircraft index
+                                               departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index,
+                                               cruise_alt, initial_frequency)        # Add aircraft. Obtain aircraft index
         self.vectoring = ""
 
     def set_heading(self, heading):
@@ -351,3 +354,7 @@ class Aircraft:
         """
         index = np.where(self.traffic.index == self.index)[0][0]
         return self.traffic.perf.perf_model._Bada__wake_category[index]
+
+    def set_frequency(self, frequency):
+        index = np.where(self.traffic.index == self.index)[0][0]
+        self.traffic.frequency[index] = frequency
