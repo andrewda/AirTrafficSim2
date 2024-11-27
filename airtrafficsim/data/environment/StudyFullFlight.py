@@ -40,7 +40,6 @@ class StudyFullFlight(RealTimeEnvironment):
         #                               flight_plan=["YIBPU", "UBG"],
         #                               cruise_alt=18000)
 
-
     def should_end(self):
 
         # Check for aircraft landing and remove
@@ -118,6 +117,9 @@ class StudyFullFlight(RealTimeEnvironment):
 
                     self.aircraft[callsign] = Aircraft(self.traffic, **{**default_config, **aircraft_config})
 
+            if "order" in payload:
+                self.traffic_order = list(map(lambda x: np.where(self.traffic.call_sign == x)[0][0], payload['order']))
+
         elif command == "takeoff":
             self.aircraft[aircraft].set_flight_phase(FlightPhase.TAKEOFF)
 
@@ -127,6 +129,9 @@ class StudyFullFlight(RealTimeEnvironment):
         elif command == "altitude":
             self.aircraft[aircraft].set_alt(payload)
             self.aircraft[aircraft].set_vs(500 if payload >= self.aircraft[aircraft].get_alt() else -500)
+
+        elif command == "altimeter":
+            self.aircraft[aircraft].set_altimeter(payload)
 
         elif command == "resume_nav":
             self.aircraft[aircraft].resume_own_navigation()

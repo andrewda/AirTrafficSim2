@@ -40,6 +40,8 @@ class Environment:
 
         self.weather = None
 
+        self.traffic_order = None
+
         if create_log_file:
             self.create_log_files(file_name)
 
@@ -56,7 +58,7 @@ class Environment:
         self.sim_file = open(self.sim_file_path, 'w+')
         self.sim_writer = csv.writer(self.sim_file)
 
-        self.sim_header = ['timestamp', 'id', 'callsign', 'lat', 'long', 'alt',
+        self.sim_header = ['timestamp', 'id', 'callsign', 'frequency', 'lat', 'long', 'alt', 'altimeter',
                        'cas', 'tas', 'vs', 'heading', 'bank_angle', 'path_angle',
                        'ap_track_angle', 'ap_heading', 'ap_alt', 'ap_cas', 'ap_procedural_speed',
                        'ap_wp_index', 'ap_next_wp', 'ap_dist_to_next_fix',
@@ -158,7 +160,7 @@ class Environment:
 
         current_time = datetime.now().isoformat()
 
-        data = np.column_stack(([current_time for i in self.traffic.index], self.traffic.index, self.traffic.call_sign, self.traffic.lat, self.traffic.long, self.traffic.alt,
+        data = np.column_stack(([current_time for i in self.traffic.index], self.traffic.index, self.traffic.call_sign, self.traffic.frequency, self.traffic.lat, self.traffic.long, self.traffic.alt, self.traffic.altimeter,
                                 self.traffic.cas, self.traffic.tas, self.traffic.vs,
                                 self.traffic.heading, self.traffic.bank_angle, self.traffic.path_angle,
                                 self.traffic.ap.track_angle, self.traffic.ap.heading, self.traffic.ap.alt, self.traffic.ap.cas, self.traffic.ap.procedure_speed,
@@ -203,6 +205,7 @@ class Environment:
                 'verticalMode': self.traffic.vertical_mode[i].item(),
                 'position': [self.traffic.lat[i].item(), self.traffic.long[i].item()],
                 'altitude': self.traffic.alt[i].item(),
+                'altimeter': self.traffic.altimeter[i].item(),
                 'heading': self.traffic.heading[i].item(),
                 'track': self.traffic.track_angle[i].item(),
                 'tas': 0 if self.traffic.flight_phase[i].item() == FlightPhase.TAXI_ORIGIN or self.traffic.flight_phase[i].item() == FlightPhase.TAXI_DEST else self.traffic.tas[i].item(),
@@ -222,12 +225,12 @@ class Environment:
                 'approach': self.traffic.ap.approach[i],
                 'frequency': self.traffic.frequency[i],
             }
-            for i in range(len(self.traffic.index))
+            for i in (range(len(self.traffic.index)) if self.traffic_order is None else self.traffic_order)
         ]
 
         socketio.emit('simulationData', {
             'packet_id': self.packet_id,
-            'global_time': self.global_time,
+            'global_time': self.global_time - 1,
             'aircraft': aircraft_data,
             'weather': self.weather,
             'paused': self.paused

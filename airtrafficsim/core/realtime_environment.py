@@ -30,7 +30,8 @@ class RealTimeEnvironment(Environment):
 
     def handle_command(self, aircraft, command, payload):
         if command == "init":
-            self.create_log_files(payload['name'])
+            if "name" in payload:
+                self.create_log_files(payload['name'])
 
         pass
 

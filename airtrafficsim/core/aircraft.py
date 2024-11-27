@@ -190,6 +190,10 @@ class Aircraft:
             self.traffic.ap.flight_plan_target_speed[index].insert(
                 i, self.traffic.ap.flight_plan_target_speed[index][i])
 
+    def set_altimeter(self, altimeter):
+        index = np.where(self.traffic.index == self.index)[0][0]
+        self.traffic.altimeter[index] = altimeter
+
     def set_flight_plan(self, arrival_airport=None, arrival_runway=None, star=None, approach=None, flight_plan=None, flight_plan_index=None, cruise_alt=None):
         """
         Set the flight plan of the aircraft.

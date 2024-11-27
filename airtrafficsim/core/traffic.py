@@ -69,6 +69,8 @@ class Traffic:
         """Transaition altitude [ft]"""
         self.cruise_alt = np.zeros([0])
         """Cruise altitude [ft]"""
+        self.altimeter = np.zeros([0])
+        """Altimeter setting [inHg]"""
 
         # Orientation
         self.heading = np.zeros([0])
@@ -163,6 +165,7 @@ class Traffic:
         self.long = np.append(self.long, long)
         self.alt = np.append(self.alt, alt)
         self.cruise_alt = np.append(self.cruise_alt, cruise_alt)
+        self.altimeter = np.append(self.altimeter, 30.00)
         self.heading = np.append(self.heading, heading)
         self.track_angle = np.append(self.track_angle, heading)
         self.bank_angle = np.append(self.bank_angle, 0.0)
@@ -227,6 +230,7 @@ class Traffic:
         self.alt = np.delete(self.alt, i)
         self.trans_alt = np.delete(self.trans_alt, i)
         self.cruise_alt = np.delete(self.cruise_alt, i)
+        self.altimeter = np.delete(self.altimeter, i)
         self.heading = np.delete(self.heading, i)
         self.track_angle = np.delete(self.track_angle, i)
         self.bank_angle = np.delete(self.bank_angle, i)
