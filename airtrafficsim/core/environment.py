@@ -224,6 +224,7 @@ class Environment:
                 'star': self.traffic.ap.star[i],
                 'approach': self.traffic.ap.approach[i],
                 'frequency': self.traffic.frequency[i],
+                'controlType': self.traffic.control_type[i],
             }
             for i in (range(len(self.traffic.index)) if self.traffic_order is None else self.traffic_order)
         ]

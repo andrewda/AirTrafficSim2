@@ -136,8 +136,9 @@ class Traffic:
 
         # Misc
         self.frequency = []
+        self.control_type = []
 
-    def add_aircraft(self, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt, initial_frequency):
+    def add_aircraft(self, call_sign, aircraft_type, flight_phase, configuration, lat, long, alt, heading, cas, fuel_weight, payload_weight, departure_airport, departure_runway, sid, arrival_airport, arrival_runway, star, approach, flight_plan, flight_plan_index, cruise_alt, initial_frequency, control_type):
         """
         Add an aircraft to traffic array.
 
@@ -202,6 +203,7 @@ class Traffic:
         self.max_cas, self.max_mach = self.perf.cal_maximum_speed()
 
         self.frequency.append(initial_frequency)
+        self.control_type.append(control_type)
 
         # Increase aircraft count
         self.n = self.n + 1
@@ -259,6 +261,7 @@ class Traffic:
         self.weather.del_aircraft(i)
 
         del self.frequency[i]
+        del self.control_type[i]
 
     def update(self, global_time, d_t=1):
         """
